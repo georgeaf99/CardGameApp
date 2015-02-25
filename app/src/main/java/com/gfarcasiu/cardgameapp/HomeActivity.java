@@ -1,16 +1,19 @@
 package com.gfarcasiu.cardgameapp;
 
-import android.support.v7.app.ActionBarActivity;
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-
-public class HomeActivity extends ActionBarActivity {
+public class HomeActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+
         setContentView(R.layout.activity_home);
     }
 
