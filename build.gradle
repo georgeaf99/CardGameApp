@@ -1,0 +1,13 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+// Updates dependencies
+buildscript {
+    repositories {
+        mavenCentral() // or jCenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.0.1'
+        // classpath 'com.android.tools.build:gradle:1.1.0-rc1' - Release Canidate
+    }
+}
