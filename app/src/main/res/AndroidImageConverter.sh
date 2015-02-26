@@ -37,8 +37,6 @@ done
 img_name=$1
 arg_sum=$((gen_low+is_icon))
 
-echo "Arg Sum = $arg_sum"
-
 # Hardcoded image switch (Change later)
 if [ $arg_sum == 1 ]; then
     img_name=$2
@@ -46,6 +44,14 @@ fi
 
 if [ $arg_sum == 2 ]; then
     img_name=$3
+fi
+
+# Help Dialog
+if [ $img_name == "/?" ]; then
+    echo "Usage: execute from res folder and target an image in the drawable folder"
+    echo "Use -i to generate an icon image (xxxdpi) and -l to generate a low-dpi image"
+    echo "Syntax: AndroidImageConverter -i -l \"image name\""
+    exit 0
 fi
 
 # Low resolution
@@ -65,3 +71,5 @@ convert -units PixelsPerInch drawable/$img_name -density $mdpi -resize $mdpi_s d
 convert -units PixelsPerInch drawable/$img_name -density $hdpi -resize $hdpi_s drawable-hdpi/$img_name
 
 convert -units PixelsPerInch drawable/$img_name -density $xhdpi -resize $xhdpi_s drawable-xhdpi/$img_name
+
+convert -units PixelsPerInch drawable/$img_name -density $xxhdpi -resize $xhdpi_s drawable-xxhdpi/$img_name
