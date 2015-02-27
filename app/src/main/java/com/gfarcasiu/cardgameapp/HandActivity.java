@@ -1,12 +1,13 @@
 package com.gfarcasiu.cardgameapp;
 
-import android.app.Activity;
 import android.content.pm.ActivityInfo;
+import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class HomeActivity extends Activity {
+
+public class HandActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,13 +15,14 @@ public class HomeActivity extends Activity {
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
-        setContentView(R.layout.activity_home);
+        setContentView(R.layout.activity_hand);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_home, menu);
+        getMenuInflater().inflate(R.menu.menu_hand, menu);
         return true;
     }
 

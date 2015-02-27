@@ -9,5 +9,6 @@
     <string name="trade">TRADE</string>
     <string name="table">TABLE</string>
     <string name="deck">DECK</string>
+    <string name="title_activity_hand">HandActivity</string>
 
 </resources>
