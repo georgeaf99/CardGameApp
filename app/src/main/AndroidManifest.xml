@@ -20,6 +20,10 @@
             android:name=".HandActivity"
             android:label="@string/title_activity_hand" >
         </activity>
+        <activity
+            android:name=".HostGameActivity"
+            android:label="@string/title_activity_host_game" >
+        </activity>
     </application>
 
 </manifest>

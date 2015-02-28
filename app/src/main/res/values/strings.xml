@@ -10,5 +10,11 @@
     <string name="table">TABLE</string>
     <string name="deck">DECK</string>
     <string name="title_activity_hand">HandActivity</string>
+    <string name="host_game">Host Game</string>
+    <string name="join_game">Join Game</string>
+    <string name="card_game_app">Card Game App</string>
+    <string name="title_activity_host_game">HostGameActivity</string>
+    <string name="back">Back</string>
+    <string name="start_game">Start \nGame</string>
 
 </resources>

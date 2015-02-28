@@ -1,10 +1,12 @@
 package com.gfarcasiu.cardgameapp;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 public class HomeActivity extends Activity {
 
@@ -37,5 +39,9 @@ public class HomeActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void hostGame(View view) {
+        startActivity(new Intent(this, HostGameActivity.class));
     }
 }
