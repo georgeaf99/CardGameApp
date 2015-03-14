@@ -44,18 +44,10 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:weightSum="6">
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            style="@style/GameButton"
-            android:layout_weight="1"
-            android:textAllCaps="false"
-            android:text="@string/back"
-            android:onClick="back"/>
         <View
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="4" />
+            android:layout_weight="5" />
         <Button
             android:layout_width="0dp"
             android:layout_height="match_parent"

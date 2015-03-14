@@ -1,16 +1,23 @@
 package com.gfarcasiu.cardgameapp;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.gfarcasiu.client.MultiServer;
+import com.gfarcasiu.game.Game;
+
 
 public class HostGameActivity extends Activity {
+
+    private BluetoothAdapter bluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,9 +28,28 @@ public class HostGameActivity extends Activity {
         setContentView(R.layout.activity_host_game);
 
         // Start Initializing Model Layer
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null) {
+            Log.e("Error", "Adapter not supported.");
+            this.onStop();
+            return;
+        }
 
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 0);
+        }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+         bluetoothAdapter.startDiscovery();
+
+        // TODO: Assuming bluetooth worked... figure out later
+        MultiServer server = new MultiServer(new Game(), bluetoothAdapter);
+        Thread serverThread = new Thread(server);
+        serverThread.start();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -47,11 +73,7 @@ public class HostGameActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void back(View view) {
-        finish();
-    }
-
-    public void startGame(View view) {
+   public void startGame(View view) {
         startActivity(new Intent(this, HandActivity.class));
     }
 }

@@ -41,8 +41,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="50"
-        android:orientation="vertical" >
-
+        android:orientation="horizontal"
+        android:weightSum="7"
+        android:gravity="center">
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/c_1"/>
     </LinearLayout>
 
     <LinearLayout
@@ -53,13 +59,6 @@
         android:orientation="horizontal"
         android:gravity="end"
         android:weightSum="6" >
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/GameButton"
-            android:text="@string/back"
-            android:onClick="back"/>
         <View
             android:layout_width="0dp"
             android:layout_height="match_parent"
