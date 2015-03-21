@@ -44,4 +44,8 @@ public class HomeActivity extends Activity {
     public void hostGame(View view) {
         startActivity(new Intent(this, HostGameActivity.class));
     }
+
+    public void joinGame(View view) {
+        startActivity(new Intent(this, ClientActivity.class));
+    }
 }

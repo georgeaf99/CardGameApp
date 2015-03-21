@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gfarcasiu.cardgameapp" >
-    <!--Permissions-->
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <application
         android:allowBackup="true"
@@ -26,6 +27,10 @@
         <activity
             android:name=".HostGameActivity"
             android:label="@string/title_activity_host_game" >
+        </activity>
+        <activity
+            android:name=".ClientActivity"
+            android:label="@string/title_activity_client" >
         </activity>
     </application>
 

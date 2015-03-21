@@ -1,5 +1,12 @@
 package com.gfarcasiu.client;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
 import com.gfarcasiu.game.*;
 import com.gfarcasiu.utilities.*;
 import java.io.IOException;
@@ -7,26 +14,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.Socket;
+import java.util.UUID;
 
 public class Client implements Runnable {
     private Game game;
     private volatile boolean terminated = false;
 
-    private String ipAddress;
-
-    private Socket socket;
+    BluetoothSocket bluetoothSocket;
     private ObjectOutputStream os;
     private ObjectInputStream ois;
 
-    // INITIALIZATION BLOCK
-    {
+    public Client(BluetoothDevice bluetoothDevice) {
         try {
-            socket = new Socket(ipAddress, MultiServer.PORT);
-            os = new ObjectOutputStream(socket.getOutputStream());
-            ois = new ObjectInputStream(socket.getInputStream());
+            bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(
+                    UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.i("Debug", "<Failed to initialize client resources/>");
         }
     }
 
@@ -44,10 +47,12 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
-        ipAddress = findServerIpAddress();
+        initialize();
 
         try {
             try {
+                String test = (String)ois.readObject();
+                Log.i("Debug", "It worked: " + test);
                 game = (Game)ois.readObject();
 
                 while (!terminated) {
@@ -72,7 +77,7 @@ public class Client implements Runnable {
             e.printStackTrace();
         } finally {
             try {
-                socket.close();
+                bluetoothSocket.close();
                 os.close();
                 ois.close();
             } catch (IOException e) {
@@ -81,12 +86,18 @@ public class Client implements Runnable {
         }
     }
 
-    public void terminate() {
-        terminated = true;
+    private void initialize() {
+        try {
+            bluetoothSocket.connect();
+            os = new ObjectOutputStream(bluetoothSocket.getOutputStream());
+            ois = new ObjectInputStream(bluetoothSocket.getInputStream());
+        } catch (IOException e) {
+            Log.i("Error", "<Initialization of resources failed/>");
+        }
     }
 
-    public String findServerIpAddress() {
-        return "192.168.1.6";
+    public void terminate() {
+        terminated = true;
     }
 
     public Game getGame() {

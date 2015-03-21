@@ -1,6 +1,7 @@
 package com.gfarcasiu.client;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
@@ -10,15 +11,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.Set;
 import java.util.UUID;
 
 import com.gfarcasiu.game.*;
 import com.gfarcasiu.utilities.*;
 
 public class MultiServer implements Runnable {
-    public static final int PORT = 19257;
     private static final int MAX_PLAYERS = 4;
 
     private boolean terminated = false;
@@ -36,10 +35,8 @@ public class MultiServer implements Runnable {
 
         Log.i("Debug", "<Bluetooth server thread started/>");
 
-
-        // TODO: the UUID should be something unique
         try (BluetoothServerSocket bluetoothServerSocket =
-                     adapter.listenUsingRfcommWithServiceRecord("CardGameApp", UUID.randomUUID())) {
+                     adapter.listenUsingRfcommWithServiceRecord("CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"))) {
 
             Log.i("Debug", "<Bluetooth server thread looking for connections/>");
 
@@ -48,7 +45,7 @@ public class MultiServer implements Runnable {
                 Log.i("Debug", "<Bluetooth device connection established/>");
             }
         } catch (IOException e) {
-            System.err.println("Could not listen on port " + PORT);
+            Log.i("Debug", "<IOException encountered when creating bluetooth server socket");
             System.exit(-1);
         }
     }
@@ -81,12 +78,11 @@ class MultiServerThread extends Thread {
 
     @Override
     public void run() {
-        threadCount++;
-
         try (
             ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ) {
+            os.writeObject("123456789 I'm alive");
             os.writeObject(game); // Shares current state of game when client connects
 
             try {

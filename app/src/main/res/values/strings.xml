@@ -16,5 +16,6 @@
     <string name="title_activity_host_game">HostGameActivity</string>
     <string name="back">Back</string>
     <string name="start_game">Start \nGame</string>
+    <string name="title_activity_client">ClientActivity</string>
 
 </resources>
