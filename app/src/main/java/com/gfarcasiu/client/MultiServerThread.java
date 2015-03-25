@@ -1,7 +1,5 @@
 package com.gfarcasiu.client;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
@@ -11,63 +9,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
-import java.util.UUID;
 
 import com.gfarcasiu.game.*;
 import com.gfarcasiu.utilities.*;
 
-public class MultiServer implements Runnable {
-    private static final int MAX_PLAYERS = 4;
-
-    private boolean terminated = false;
-
-    private Game game;
-    private BluetoothAdapter adapter;
-
-    public MultiServer(Game game, BluetoothAdapter adapter) {
-        this.game = game;
-        this.adapter = adapter;
-    }
-
-    public void run() { // NOTE : does not handle port collisions
-        MultiServerThread.setGame(game); // SETS THE GAME
-
-        Log.i("Debug", "<Bluetooth server thread started/>");
-
-        try (BluetoothServerSocket bluetoothServerSocket =
-                     adapter.listenUsingRfcommWithServiceRecord("CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"))) {
-
-            Log.i("Debug", "<Bluetooth server thread looking for connections/>");
-
-            while (!terminated && MultiServerThread.getThreadCount() < MAX_PLAYERS) {
-                new MultiServerThread(bluetoothServerSocket.accept()).start();
-                Log.i("Debug", "<Bluetooth device connection established/>");
-            }
-        } catch (IOException e) {
-            Log.i("Debug", "<IOException encountered when creating bluetooth server socket");
-            System.exit(-1);
-        }
-    }
-
-    public void terminate() {
-        terminated = true;
-    }
-
-    public Game getGame() {
-        return game;
-    }
-
-    // TESTING ONLY
-    /*public static void main(String[] args) {
-        MultiServer server = new MultiServer(new Game());
-        new Thread(server).start();
-    }*/
-}
-
-class MultiServerThread extends Thread {
-    private static Game game; // Game object to make changes to
-    private static int threadCount = 0;
+public class MultiServerThread extends Thread {
+    private volatile static Game game = new Game(); // Game object to make changes to
+    private volatile static int threadCount = 0;
 
     private BluetoothSocket socket = null;
     private volatile boolean terminated = false;
@@ -78,11 +26,17 @@ class MultiServerThread extends Thread {
 
     @Override
     public void run() {
+        if (threadCount >= 4)
+            return;
+
+        threadCount++;
+
         try (
             ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ) {
-            os.writeObject("123456789 I'm alive");
+            os.writeObject("11;lfasdfas blah blah it worked yahoo!");
+            Log.i("Debug", "<Server thread running/>");
             os.writeObject(game); // Shares current state of game when client connects
 
             try {

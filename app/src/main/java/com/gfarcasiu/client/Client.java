@@ -21,26 +21,21 @@ public class Client implements Runnable {
     private volatile boolean terminated = false;
 
     BluetoothSocket bluetoothSocket;
-    private ObjectOutputStream os;
+    private ObjectOutputStream oos;
     private ObjectInputStream ois;
 
-    public Client(BluetoothDevice bluetoothDevice) {
-        try {
-            bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(
-                    UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
-        } catch (IOException e) {
-            Log.i("Debug", "<Failed to initialize client resources/>");
-        }
+    public Client(BluetoothSocket bluetoothSocket) {
+        this.bluetoothSocket = bluetoothSocket;
     }
 
     // NOTE : Cannot be called before the thread starts or run is called
     public void executeAction(Method outgoing, Object ... args) {
         try {
             // Write serialized method
-            os.writeObject(new SerializableMethod(outgoing));
-            os.writeObject(args);
+            oos.writeObject(new SerializableMethod(outgoing));
+            oos.writeObject(args);
         } catch (IOException e) {
-            System.err.println("<IOException encountered when initializing resources/>");
+            Log.e("Error", "<IOException encountered when initializing resources/>");
             e.printStackTrace();
         }
     }
@@ -52,7 +47,7 @@ public class Client implements Runnable {
         try {
             try {
                 String test = (String)ois.readObject();
-                Log.i("Debug", "It worked: " + test);
+                Log.i("Debug", "!!!It worked: " + test);
                 game = (Game)ois.readObject();
 
                 while (!terminated) {
@@ -70,7 +65,7 @@ public class Client implements Runnable {
                     }
                 }
             } catch (InvocationTargetException | ClassNotFoundException | IllegalAccessException e) {
-                System.err.println("<Exception encountered during client execution/>");
+                Log.e("Error", "<Exception encountered during client execution/>");
                 e.printStackTrace();
             }
         } catch (IOException e) {
@@ -78,7 +73,7 @@ public class Client implements Runnable {
         } finally {
             try {
                 bluetoothSocket.close();
-                os.close();
+                oos.close();
                 ois.close();
             } catch (IOException e) {
                 // DO NOTHING
@@ -88,8 +83,7 @@ public class Client implements Runnable {
 
     private void initialize() {
         try {
-            bluetoothSocket.connect();
-            os = new ObjectOutputStream(bluetoothSocket.getOutputStream());
+            oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
             ois = new ObjectInputStream(bluetoothSocket.getInputStream());
         } catch (IOException e) {
             Log.i("Error", "<Initialization of resources failed/>");

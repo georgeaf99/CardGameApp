@@ -45,9 +45,7 @@
         android:weightSum="7"
         android:gravity="center">
         <ImageView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            style="@style/playing_card"
             android:background="@drawable/c_1"/>
     </LinearLayout>
 

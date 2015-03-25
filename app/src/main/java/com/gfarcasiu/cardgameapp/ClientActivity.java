@@ -3,41 +3,66 @@ package com.gfarcasiu.cardgameapp;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.gfarcasiu.client.Client;
-import com.gfarcasiu.client.MultiServer;
-import com.gfarcasiu.game.Game;
+
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.UUID;
 
 
 public class ClientActivity extends Activity {
 
-    private BluetoothAdapter bluetoothAdapter;
-
-    // Request codes
-    private static int ENABLE_BT_REQUEST = 0;
-    private static int DISCOVERABLE_REQUEST = 1;
+    // Request Codes
+    private static final int ENABLE_BT_REQUEST = 1;
 
     private Client client;
 
-    final BroadcastReceiver bReceiver = new BroadcastReceiver() {
+    private BluetoothAdapter bluetoothAdapter;
+    private HashMap<String, BluetoothDevice> discoveredDevices = new HashMap<>();
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            // When discovery finds a device
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                Log.i("Debug", "Broadcast reciever");
-                // Get the BluetoothDevice object from the Intent
-                BluetoothDevice device = intent.getParcelableExtra(
-                        BluetoothDevice.EXTRA_DEVICE);
-                client = new Client(device);
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                if (device == null) return; // Should not happen often
+
+                Log.i("Debug", "<Device found: " + device.getName() + " " + device.getAddress());
+
+                if (device.getName() != null) {
+                    // Set device texts
+                    if (!discoveredDevices.containsKey(device.getName())) {
+                        Button deviceView = new Button(getApplicationContext());
+                        deviceView.setText(device.getName());
+                        deviceView.setTextAppearance(getApplicationContext(), R.style.device_list_theme);
+                        deviceView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                connectTo(((Button)v).getText().toString());
+                            }
+                        });
+
+                        ((LinearLayout) findViewById(R.id.device_layout)).addView(deviceView);
+                    }
+
+                    discoveredDevices.put(device.getName(), device);
+                }
             }
         }
     };
@@ -46,55 +71,93 @@ public class ClientActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.i("Debug", "<Client on create/>");
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
         setContentView(R.layout.activity_client);
 
-        // Start initializing bluetooth
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bluetoothAdapter == null) {
-            Log.e("Error", "Adapter not supported.");
-            this.onStop();
-            return;
-        }
+        // Start the bluetooth client
+        initSequence();
+        registerReceiver();
+    }
 
-        /*if (!bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, ENABLE_BT_REQUEST);
-        }*/
+    @Override
+    protected void onStop() {
+        unregisterReceiver(mReceiver);
+        client.terminate();
 
-        Intent discoverableIntent =
-                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        startActivityForResult(discoverableIntent, DISCOVERABLE_REQUEST);
+        super.onStop();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.i("Debug", "<onActivityResult in ClientActivity/>");
+        if (requestCode == ENABLE_BT_REQUEST) {
+            Log.i("Debug", "<Bluetooth enabled callback/>");
+            bluetoothAdapter.startDiscovery();
+        }
     }
 
+    // HELPER METHODS
+    public void connectTo(final String name) {
+        Log.i("Debug", "<On click called: " + name + "/>");
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_client, menu);
-        return true;
+        new Thread() {
+            public void run() {
+                BluetoothDevice serverDevice = discoveredDevices.get(name);
+
+                try {
+                    BluetoothSocket bluetoothSocket = serverDevice.createRfcommSocketToServiceRecord(
+                            UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
+                    bluetoothSocket.connect();
+
+                    ObjectOutputStream oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
+
+                    oos.writeObject(serverDevice.getName());
+
+                    // Start real client
+                    client = new Client(bluetoothSocket);
+                    new Thread(client).start();
+
+                    ClientActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            startActivity(new Intent(ClientActivity.this, HandActivity.class));
+                        }
+                    });
+                } catch (IOException e) {
+                    Log.e("Error", "<Connecting to server device failed/>");
+                }
+            }
+        }.start();
+
+        // Change UI to reflect current state
+        ((TextView)findViewById(R.id.title)).setText(name + " Lobby");
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    private void initSequence() {
+        bluetoothAdapter = getAdapter();
+        if (bluetoothAdapter == null) {
+            Log.e("Error", "<Bluetooth adapter not supported./>");
+            this.onStop();
+            return;
         }
 
-        return super.onOptionsItemSelected(item);
+        enableBluetooth(); // possibly async call
+    }
+
+    private void registerReceiver() {
+        Log.i("Debug", "<Device being registered/>");
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter);
+    }
+
+
+    private void enableBluetooth() {
+        Log.i("Debug", "<Enabling bluetooth/>");
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(enableBtIntent, ENABLE_BT_REQUEST);
+    }
+
+    private BluetoothAdapter getAdapter() {
+        return BluetoothAdapter.getDefaultAdapter();
     }
 }

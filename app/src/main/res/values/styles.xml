@@ -24,4 +24,20 @@
         <item name="android:textAllCaps">false</item>
     </style>
 
+    <style name="device_list_theme">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">@drawable/control_flow_button</item>
+    </style>
+
+    <style name="playing_card">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">115dp</item>
+    </style>
+
 </resources>
