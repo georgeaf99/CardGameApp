@@ -1,10 +1,6 @@
 package com.gfarcasiu.client;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import com.gfarcasiu.game.*;
@@ -14,9 +10,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 public class Client implements Runnable {
+    public static Client instance;
+
     private Game game;
     private volatile boolean terminated = false;
 
@@ -24,8 +21,18 @@ public class Client implements Runnable {
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
 
-    public Client(BluetoothSocket bluetoothSocket) {
+    // Singleton design pattern
+    private Client(BluetoothSocket bluetoothSocket) {
         this.bluetoothSocket = bluetoothSocket;
+    }
+
+    public static Client getInstance() {
+        return instance;
+    }
+
+    public static void createInstance(BluetoothSocket bluetoothSocket) {
+        Log.i("Debug", "<Client instance created/>");
+        instance = new Client(bluetoothSocket);
     }
 
     // NOTE : Cannot be called before the thread starts or run is called
@@ -72,6 +79,7 @@ public class Client implements Runnable {
             e.printStackTrace();
         } finally {
             try {
+                Log.i("Debug", "<Closing all resources on the client side/>");
                 bluetoothSocket.close();
                 oos.close();
                 ois.close();

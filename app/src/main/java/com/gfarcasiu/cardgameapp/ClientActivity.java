@@ -83,7 +83,8 @@ public class ClientActivity extends Activity {
     @Override
     protected void onStop() {
         unregisterReceiver(mReceiver);
-        client.terminate();
+        if (client != null)
+            client.terminate();
 
         super.onStop();
     }
@@ -109,18 +110,22 @@ public class ClientActivity extends Activity {
                             UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
                     bluetoothSocket.connect();
 
-                    ObjectOutputStream oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
+                    //ObjectOutputStream oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
 
-                    oos.writeObject(serverDevice.getName());
+                    //oos.writeObject(serverDevice.getName());
 
                     // Start real client
-                    client = new Client(bluetoothSocket);
+                    Client.createInstance(bluetoothSocket);
+                    client = Client.getInstance();
                     new Thread(client).start();
 
                     ClientActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            startActivity(new Intent(ClientActivity.this, HandActivity.class));
+                            Intent intent = new Intent(ClientActivity.this, HandActivity.class);
+                            intent.putExtra("isServer", false);
+
+                            startActivity(intent);
                         }
                     });
                 } catch (IOException e) {

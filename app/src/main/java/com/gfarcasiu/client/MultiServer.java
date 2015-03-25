@@ -1,6 +1,5 @@
 package com.gfarcasiu.client;
 
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
@@ -9,18 +8,24 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
 
 import com.gfarcasiu.game.*;
 import com.gfarcasiu.utilities.*;
 
-public class MultiServerThread extends Thread {
+public class MultiServer extends Thread {
     private volatile static Game game = new Game(); // Game object to make changes to
     private volatile static int threadCount = 0;
+
+    // TODO poor software engineering design
+    private volatile static HashSet<ObjectOutputStream> outputStreams = new HashSet<>();
+    private volatile static HashSet<ObjectInputStream> inputStreams = new HashSet<>();
 
     private BluetoothSocket socket = null;
     private volatile boolean terminated = false;
 
-    public MultiServerThread(BluetoothSocket socket) {
+    // Singleton design pattern
+    public MultiServer(BluetoothSocket socket) {
         this.socket = socket;
     }
 
@@ -32,12 +37,15 @@ public class MultiServerThread extends Thread {
         threadCount++;
 
         try (
-            ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
+            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         ) {
-            os.writeObject("11;lfasdfas blah blah it worked yahoo!");
+            outputStreams.add(oos);
+            inputStreams.add(ois);
+
+            oos.writeObject("11;lfasdfas blah blah it worked yahoo!");
             Log.i("Debug", "<Server thread running/>");
-            os.writeObject(game); // Shares current state of game when client connects
+            oos.writeObject(game); // Shares current state of game when client connects
 
             try {
                 while (!terminated) {
@@ -59,8 +67,10 @@ public class MultiServerThread extends Thread {
                         continue;
                     }
 
-                    os.writeObject(new SerializableMethod(incoming));
-                    os.writeObject(inArgs);
+                    for (ObjectOutputStream stream : outputStreams) {
+                        stream.writeObject(new SerializableMethod(incoming));
+                        stream.writeObject(inArgs);
+                    }
                 }
             } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
                 System.err.println("<Exception encountered during client execution/>");
@@ -68,6 +78,32 @@ public class MultiServerThread extends Thread {
             }
         } catch (IOException e) {
             System.err.println("<Exception encountered initializing resources/>");
+            e.printStackTrace();
+        }
+    }
+
+    // TODO poor adaption to bluetooth, comes from lack of loop back on bluetooth
+    public static void executeAction(Method incoming, Object ... inArgs) {
+        // Execute method
+        try {
+            switch (inArgs.length) {
+                case 0: incoming.invoke(game); break;
+                case 1: incoming.invoke(game, inArgs[0]); break;
+                case 2: incoming.invoke(game, inArgs[0], inArgs[1]); break;
+                case 3: incoming.invoke(game, inArgs[0], inArgs[1], inArgs[2]); break;
+                default: System.out.println("<Method argument number is incorrect/>");
+            }
+        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+            System.err.println("<Invalid request: " + e.getMessage() + "/>");
+            return;
+        }
+
+        try {
+            for (ObjectOutputStream stream : outputStreams) {
+                stream.writeObject(new SerializableMethod(incoming));
+                stream.writeObject(inArgs);
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -83,7 +119,7 @@ public class MultiServerThread extends Thread {
     }
 
     public static void setGame(Game game) {
-        MultiServerThread.game = game;
+        MultiServer.game = game;
     }
 
     public static int getThreadCount() {

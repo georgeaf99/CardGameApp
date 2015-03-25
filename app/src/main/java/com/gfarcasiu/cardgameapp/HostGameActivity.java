@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
-import com.gfarcasiu.client.MultiServerThread;
+import com.gfarcasiu.client.MultiServer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,7 +28,7 @@ public class HostGameActivity extends Activity {
 
     private BluetoothAdapter bluetoothAdapter;
 
-    private HashSet<MultiServerThread> threads = new HashSet<>();
+    private HashSet<MultiServer> threads = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +54,7 @@ public class HostGameActivity extends Activity {
 
                     BluetoothSocket bluetoothSocket = bluetoothServerSocket.accept();
 
-                    ObjectInputStream ois = new ObjectInputStream(bluetoothSocket.getInputStream());
+                    /*ObjectInputStream ois = new ObjectInputStream(bluetoothSocket.getInputStream());
 
                     String input = null;
                     while (input == null) {
@@ -75,15 +75,15 @@ public class HostGameActivity extends Activity {
                             deviceView.setTextAppearance(getApplicationContext(), R.style.device_list_theme);
                             ((LinearLayout)findViewById(R.id.device_layout)).addView(deviceView);
                         }
-                    });
+                    });*/
 
                     //ois.close();
 
                     // Start the real server thread
-                    MultiServerThread serverThread = new MultiServerThread(bluetoothSocket);
+                    MultiServer serverThread = new MultiServer(bluetoothSocket);
                     serverThread.start();
                     threads.add(serverThread);
-                } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                } catch (IOException /*| ClassNotFoundException | InterruptedException*/ e) {
                     Log.e("Error", "<Creating server failed/>");
                 }
             }
@@ -92,7 +92,7 @@ public class HostGameActivity extends Activity {
 
     @Override
     protected void onStop() {
-        for (MultiServerThread thread : threads)
+        for (MultiServer thread : threads)
             thread.terminate();
 
         super.onStop();
@@ -113,7 +113,10 @@ public class HostGameActivity extends Activity {
     }
 
     public void startGame(View view) {
-        startActivity(new Intent(this, HandActivity.class));
+        Intent intent = new Intent(this, HandActivity.class);
+        intent.putExtra("isServer", true);
+
+        startActivity(intent);
     }
 
     // HELPER METHODS

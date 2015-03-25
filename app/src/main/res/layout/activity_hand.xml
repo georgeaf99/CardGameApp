@@ -17,23 +17,26 @@
         android:weightSum="6"
         android:gravity="center|center_horizontal">
         <Button
+            android:id="@+id/deck_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             style="@style/GameButton"
             android:text="@string/deck" />
         <Button
+            android:id="@+id/table_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             style="@style/GameButton"
             android:text="@string/table" />
         <Button
+            android:id="@+id/trash_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             style="@style/GameButton"
-            android:text="@string/trade" />
+            android:text="@string/trash" />
     </LinearLayout>
 
     <LinearLayout
@@ -45,6 +48,7 @@
         android:weightSum="7"
         android:gravity="center">
         <ImageView
+            android:id="@+id/playing_card"
             style="@style/playing_card"
             android:background="@drawable/c_1"/>
     </LinearLayout>
