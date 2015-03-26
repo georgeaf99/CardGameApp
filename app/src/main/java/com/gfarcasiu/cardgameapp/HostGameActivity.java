@@ -28,7 +28,7 @@ public class HostGameActivity extends Activity {
 
     private BluetoothAdapter bluetoothAdapter;
 
-    private HashSet<MultiServer> threads = new HashSet<>();
+    private boolean terminate = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,49 +44,54 @@ public class HostGameActivity extends Activity {
         initSequence();
         enableDiscoverablility();
 
-        // TODO replace this thread with the multi-threaded server
         new Thread() {
             public void run() {
-                try {
-                    BluetoothServerSocket bluetoothServerSocket =
-                            bluetoothAdapter.listenUsingRfcommWithServiceRecord(
-                                    "BluetoothTest", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
+                // Allow 4 connections
+                for (int i = 0; i < 4; i++) {
+                    if (terminate)
+                        return;
 
-                    BluetoothSocket bluetoothSocket = bluetoothServerSocket.accept();
+                    try {
+                        BluetoothServerSocket bluetoothServerSocket =
+                                bluetoothAdapter.listenUsingRfcommWithServiceRecord(
+                                "CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
 
-                    ObjectInputStream ois = new ObjectInputStream(bluetoothSocket.getInputStream());
+                        BluetoothSocket bluetoothSocket = bluetoothServerSocket.accept();
 
-                    String input = null;
-                    while (input == null) {
-                        Thread.sleep(100);
-                        input = (String) ois.readObject();
-                    }
+                        // Get name of client
+                        ObjectInputStream ois = new ObjectInputStream(bluetoothSocket.getInputStream());
 
-                    // TODO this is bad form, change later
-                    final String finalInput = input;
-
-                    Log.i("Debug", "<Recieved message: " + input + "/>");
-                    HostGameActivity.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            //Toast.makeText(getApplicationContext(), finalInput, Toast.LENGTH_LONG).show();
-                            Button deviceView = new Button(getApplicationContext());
-                            deviceView.setText(finalInput);
-                            deviceView.setTextAppearance(getApplicationContext(), R.style.device_list_theme);
-                            ((LinearLayout)findViewById(R.id.device_layout)).addView(deviceView);
+                        String input = null;
+                        while (input == null) {
+                            Thread.sleep(100);
+                            input = (String) ois.readObject();
                         }
-                    });
 
-                    //ois.close();
+                        // TODO this is bad form, change later
+                        final String finalInput = input;
 
-                    // Start the real server thread
-                    MultiServer serverThread = new MultiServer(bluetoothSocket);
-                    //serverThread.setPriority(Thread.MAX_PRIORITY);
-                    serverThread.start();
+                        Log.i("Debug", "<Recieved message: " + input + "/>");
+                        HostGameActivity.this.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() { // TODO not working
+                                //Toast.makeText(getApplicationContext(), finalInput, Toast.LENGTH_LONG).show();
+                                Button deviceView = new Button(getApplicationContext());
+                                deviceView.setText(finalInput);
+                                deviceView.setTextAppearance(getApplicationContext(), R.style.device_list_theme);
+                                ((LinearLayout) findViewById(R.id.device_layout)).addView(deviceView);
+                            }
+                        });
 
-                    threads.add(serverThread);
-                } catch (IOException | ClassNotFoundException | InterruptedException e) {
-                    Log.e("Error", "<Creating server failed/>");
+                        //ois.close();
+
+                        // Start the real server thread
+                        MultiServer serverThread = new MultiServer(bluetoothSocket);
+                        serverThread.setPriority(Thread.MAX_PRIORITY);
+                        serverThread.start();
+                    } catch (IOException | ClassNotFoundException | InterruptedException e) {
+                        Log.e("Error", "<Creating server failed/>");
+                        e.printStackTrace();
+                    }
                 }
             }
         }.start();
@@ -94,8 +99,7 @@ public class HostGameActivity extends Activity {
 
     @Override
     protected void onStop() {
-        /*for (MultiServer thread : threads)
-            thread.terminate();*/
+        terminate = true;
 
         super.onStop();
     }

@@ -78,32 +78,4 @@ public class Entity implements Serializable {
     public String toString() {
         return maxCards + " " + cards.toString();
     }
-
-    // OVERRIDDEN METHODS
-
-    /*private void writeObject(ObjectOutputStream out) throws IOException {
-        out.writeInt(maxCards);
-
-        out.writeInt(cards.size()); // Writes the size of the array list
-
-        for (PlayingCard c : cards)
-            out.writeObject(c);
-
-        //out.close();
-    }
-
-    private void readObject(ObjectInputStream in)
-            throws IOException, ClassNotFoundException {
-        maxCards = in.readInt();
-
-        int numCards = in.readInt();
-
-        cards = new ArrayList<>();
-
-        for (int i = 0; i < numCards; i++)
-            cards.add((PlayingCard)in.readObject());
-
-        //in.close();
-    }*/
-
 }

@@ -32,6 +32,7 @@ public class Game implements Serializable {
 
     // CARD MOVEMENT
 
+    // TODO find a way to communicate this information
     /*public void playerToPlayer(PlayingCard c, Entity p1, Entity p2) {
         p1.removeCard(c);
         p2.addCard(c);

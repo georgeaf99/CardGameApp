@@ -1,6 +1,5 @@
 package com.gfarcasiu.cardgameapp;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
@@ -15,16 +14,15 @@ import android.util.TypedValue;
 import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.gfarcasiu.client.Client;
 import com.gfarcasiu.client.MultiServer;
-import com.gfarcasiu.game.Entity;
 import com.gfarcasiu.game.Game;
 import com.gfarcasiu.game.Player;
 import com.gfarcasiu.game.PlayingCard;
+import com.gfarcasiu.utilities.HelperFunctions;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -38,6 +36,7 @@ public class HandActivity extends Activity {
     private View viewBeingDragged; // TODO think of a better name...
     private HashMap<View, PlayingCard> cardMap = new HashMap<>(); // TODO there must be a better way
 
+    private long commandTimeStamp = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,25 +49,26 @@ public class HandActivity extends Activity {
         // Initialize game and player settings
         isServer = getIntent().getExtras().getBoolean("isServer");
 
-        Log.i("Debug", "<Client create is sever: " + isServer + "/>");
+        Log.i("Debug", "<Device is sever: " + isServer + "/>");
 
         if (getIntent().getExtras().getBoolean("isNewGame")) {
+            // Add current player to game
             uniqueId = Settings.Secure.getString(getApplicationContext().getContentResolver(),
                     Settings.Secure.ANDROID_ID);
             Player currentPlayer = new Player(uniqueId, 52);
 
             try {
-                Log.i("Debug", "<Current player: " + currentPlayer + "/>");
                 executeAction(Game.class.getMethod("addPlayer", Player.class), currentPlayer);
             } catch (NoSuchMethodException e) {
                 Log.e("Error", "<Player could not be added/>");
                 e.printStackTrace();
+
                 this.onStop();
                 return;
             }
         } else {
             // Populate cards
-            PlayingCard[] cards = getGame().getPlayer(uniqueId).getCards();
+            PlayingCard[] cards = HelperFunctions.getGame(isServer).getPlayer(uniqueId).getCards();
             for (PlayingCard card : cards)
                 displayCard(card);
         }
@@ -84,49 +84,46 @@ public class HandActivity extends Activity {
     }
 
     public void toTable(View view) {
+        this.onStop(); // Perhaps not necessary
+
         Intent intent = new Intent(this, TableActivity.class);
         intent.putExtra("isServer", isServer);
+        intent.putExtra("uniqueId", uniqueId);
 
         startActivity(intent);
     }
 
     public void drawCard(View view) {
-        Log.i("Debug", "<Game " + getGame() + "/>");
-        PlayingCard playingCard = Game.getRandomCard(getGame().getDeck());
+        PlayingCard playingCard = Game.getRandomCard(HelperFunctions.getGame(isServer).getDeck());
 
         try {
             executeAction(Game.class.getMethod("deckToPlayer",
                 PlayingCard.class, String.class), playingCard, uniqueId);
         } catch (NoSuchMethodException e) {
-            Log.i("Debug", "<Couldn't execute draw card/>");
+            Log.e("Error", "<Couldn't execute draw card/>");
+            e.printStackTrace();
         }
 
         displayCard(playingCard);
-
-        Log.i("Debug", "<Players: " + Arrays.toString(getGame().getPlayers()) + "/>");
     }
 
     private final class MyTouchListener implements View.OnTouchListener {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            //Log.i("Debug", "<On touch/>");
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                //Log.i("Debug", "<On touch action down/>");
-
                 ClipData data = ClipData.newPlainText("", "");
                 View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
                 view.startDrag(data, shadowBuilder, view.getParent(), 0);
-                view.setVisibility(View.INVISIBLE);
 
-                cardMap.put(view, getPlayingCardFromImageName((String)view.getTag()));
+                ((LinearLayout)view.getParent()).removeView(view);
+
+                cardMap.put(view, HelperFunctions.getPlayingCardFromImageName((String)view.getTag()));
 
                 viewBeingDragged = view;
 
-                // TODO make clipdata the card information
-
                 return true;
             } else {
-                return true;
+                return false;
             }
         }
     }
@@ -136,10 +133,7 @@ public class HandActivity extends Activity {
         public boolean onDrag(View v, DragEvent event) {
             final int action = event.getAction();
 
-            if (action == DragEvent.ACTION_DRAG_STARTED) {
-                //Log.i("Debug", "<Action drag started/>");
-            } else if (action == DragEvent.ACTION_DROP) {
-                //Log.i("Debug", "<Action drop/>");
+            if (action == DragEvent.ACTION_DROP) {
                 Log.i("Debug", "<Card info: " + cardMap.get(viewBeingDragged) + "/>");
 
                 final int containerId = v.getId();
@@ -149,26 +143,33 @@ public class HandActivity extends Activity {
                     switch (containerId) {
                         case R.id.table_button:
                             Log.i("Debug", "<Table button dragged/>");
-                            executeAction(Game.class.getMethod("playerToVisible",
-                                    PlayingCard.class, String.class),
-                                    card, uniqueId);
+                            executeAction(
+                                Game.class.getMethod("playerToVisible", PlayingCard.class, String.class),
+                                card, uniqueId);
                             break;
                         case R.id.trash_button:
                             Log.i("Debug", "<Trash button dragged/>");
+                            executeAction(
+                                Game.class.getMethod("playerToTrash", PlayingCard.class, String.class),
+                                card, uniqueId);
                             break;
                         case R.id.deck_button:
                             Log.i("Debug", "<Deck button dragged/>");
+                            executeAction(
+                                Game.class.getMethod("playerToDeck", PlayingCard.class, String.class),
+                                card, uniqueId);
                             break;
                     }
                 } catch (NoSuchMethodException e) {
                     // THIS SHOULD NEVER HAPPEN
+                    e.printStackTrace();
                 }
 
                 if (containerId != R.id.table_button && containerId != R.id.trash_button
                         && containerId != R.id.deck_button) {
-                    ((LinearLayout)viewBeingDragged.getParent()).removeView(viewBeingDragged);
                     ((LinearLayout)findViewById(R.id.middle)).addView(viewBeingDragged);
-                    viewBeingDragged.setVisibility(View.VISIBLE);
+                } else {
+                    cardMap.remove(viewBeingDragged);
                 }
 
                 viewBeingDragged = null;
@@ -179,34 +180,38 @@ public class HandActivity extends Activity {
     }
 
     // HELPER METHOD
-    private void executeAction(Method method, Object...args) {
-        if (!isServer)
-            Client.getInstance().executeAction(method, args);
-        else
-            MultiServer.executeAction(method, args);
+    private void executeAction(final Method method, final Object...args) {
+        // Wait to execute calls if they occur to quckly
+        if (System.currentTimeMillis() - commandTimeStamp > 0.25 * Math.pow(10, 9)) {
+            if (!isServer)
+                Client.getInstance().executeAction(method, args);
+            else
+                MultiServer.executeAction(method, args);
+
+            commandTimeStamp = System.currentTimeMillis();
+        } else {
+            new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (!isServer)
+                        Client.getInstance().executeAction(method, args);
+                    else
+                        MultiServer.executeAction(method, args);
+                }
+            }.start();
+
+            commandTimeStamp = System.currentTimeMillis() + 200;
+        }
     }
 
-    private Game getGame() {
-        if (!isServer)
-            return Client.getInstance().getGame();
-        else
-            return MultiServer.getGame();
-    }
-
-    private String getImageNameFromPlayingCard(PlayingCard card) {
-        return "c_" + (4 * (14 - card.getValue()) + card.getSuit() + 1);
-    }
-
-    private PlayingCard getPlayingCardFromImageName(String name) {
-        int num = Integer.parseInt(name.substring(2));
-        return new PlayingCard(
-                14 - (num - 1) / 4,
-                (num - 1) % 4,
-                true);
-    }
 
     private void displayCard(PlayingCard card) {
-        String imageName = getImageNameFromPlayingCard(card);
+        String imageName = HelperFunctions.getImageNameFromPlayingCard(card);
 
         Context context = getApplicationContext();
         Resources resources = context.getResources();

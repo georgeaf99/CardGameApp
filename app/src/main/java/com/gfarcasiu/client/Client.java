@@ -8,22 +8,23 @@ import com.gfarcasiu.utilities.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class Client implements Runnable {
     public static Client instance;
 
-    private Game game;
+    private volatile Game game;
     private volatile boolean terminated = false;
 
-    BluetoothSocket bluetoothSocket;
-    private ObjectOutputStream oos;
-    private ObjectInputStream ois;
+    private BluetoothSocket bluetoothSocket;
+    private volatile ObjectOutputStream oos;
+    private volatile ObjectInputStream ois;
 
     // Singleton design pattern
     private Client(BluetoothSocket bluetoothSocket) {
         this.bluetoothSocket = bluetoothSocket;
+
+        initialize();
     }
 
     public static Client getInstance() {
@@ -39,9 +40,6 @@ public class Client implements Runnable {
     public void executeAction(Method outgoing, Object ... args) {
         Log.i("Debug", "<Client execute action: " + outgoing.getName() + " " + args.length + "/>");
 
-        //if (oos == null || ois == null)
-            //initialize();
-
         try {
             // Write serialized method
             oos.writeObject(new SerializableMethod(outgoing));
@@ -55,8 +53,6 @@ public class Client implements Runnable {
     @Override
     public void run() {
         Log.i("Debug", "<Client thread running./>");
-        //if (oos == null || ois == null)
-            initialize();
 
         try {
             try {
@@ -68,22 +64,16 @@ public class Client implements Runnable {
                     Method incoming = ((SerializableMethod) ois.readObject()).getMethod();
                     Object[] inArgs = (Object[]) ois.readObject();
 
-                    // Execute method
-                    switch (inArgs.length) {
-                        case 0: incoming.invoke(game); break;
-                        case 1: incoming.invoke(game, inArgs[0]); break;
-                        case 2: incoming.invoke(game, inArgs[0], inArgs[1]); break;
-                        case 3: incoming.invoke(game, inArgs[0], inArgs[1], inArgs[2]); break;
-                        default: System.err.println("<Method argument number is incorrect./>");
-                    }
+                   HelperFunctions.executeMethod(game, incoming, inArgs);
                 }
-            } catch (InvocationTargetException | ClassNotFoundException | IllegalAccessException e) {
+            } catch (ClassNotFoundException e) {
                 Log.e("Error", "<Exception encountered during client execution/>");
                 e.printStackTrace();
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            // TODO close resources eventually
             //try {
                 //Log.i("Debug", "<Closing all resources on the client side/>");
                 //bluetoothSocket.close();
@@ -101,6 +91,7 @@ public class Client implements Runnable {
             ois = new ObjectInputStream(bluetoothSocket.getInputStream());
         } catch (IOException e) {
             Log.i("Error", "<Initialization of resources failed/>");
+            e.printStackTrace();
         }
     }
 

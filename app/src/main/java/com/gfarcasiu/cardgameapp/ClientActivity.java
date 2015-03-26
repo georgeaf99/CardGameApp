@@ -38,6 +38,7 @@ public class ClientActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
@@ -46,7 +47,7 @@ public class ClientActivity extends Activity {
                 Log.i("Debug", "<Device found: " + device.getName() + " " + device.getAddress());
 
                 if (device.getName() != null) {
-                    // Set device texts
+                    // Set device texts on view
                     if (!discoveredDevices.containsKey(device.getName())) {
                         Button deviceView = new Button(getApplicationContext());
                         deviceView.setText(device.getName());
@@ -134,6 +135,7 @@ public class ClientActivity extends Activity {
                     });
                 } catch (IOException e) {
                     Log.e("Error", "<Connecting to server device failed/>");
+                    e.printStackTrace();
                 }
             }
         }.start();

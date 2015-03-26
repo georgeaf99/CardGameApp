@@ -1,5 +1,6 @@
 package com.gfarcasiu.cardgameapp;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
@@ -16,25 +17,30 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Chronometer;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.gfarcasiu.client.Client;
 import com.gfarcasiu.client.MultiServer;
 import com.gfarcasiu.game.Entity;
 import com.gfarcasiu.game.Game;
 import com.gfarcasiu.game.PlayingCard;
+import com.gfarcasiu.utilities.HelperFunctions;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
 
 public class TableActivity extends Activity {
-    private static Entity currentPlayer;
+    private static String uniqueId;
     private boolean isServer;
 
     private View viewBeingDragged; // TODO think of a better name...
     private HashMap<View, PlayingCard> cardMap = new HashMap<>(); // TODO there must be a better way
+
+    private long commandTimeStamp = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,18 +51,31 @@ public class TableActivity extends Activity {
         setContentView(R.layout.activity_table);
 
         isServer = getIntent().getExtras().getBoolean("isServer");
+        uniqueId = getIntent().getExtras().getString("uniqueId");
 
-        Log.i("Debug", "<isServer " + isServer + "/>");
+        Log.i("Debug", "<Device is server " + isServer + "/>");
 
         // Populate cards
-        PlayingCard[] cards = getGame().getVis().getCards();
+        PlayingCard[] cards = HelperFunctions.getGame(isServer).getVis().getCards();
         for (PlayingCard card : cards)
             displayCard(card);
+
+        // Set Listeners
+        MyTouchListener touchListener = new MyTouchListener();
+        findViewById(R.id.deck_card).setOnTouchListener(touchListener);
+
+        MyDragEventListener dragEventListener = new MyDragEventListener();
+        findViewById(R.id.top).setOnDragListener(dragEventListener);
+        findViewById(R.id.middle).setOnDragListener(dragEventListener);
+        findViewById(R.id.bottom).setOnDragListener(dragEventListener);
+        findViewById(R.id.deck_card).setOnDragListener(dragEventListener);
     }
 
     public void toHand(View view) {
+        this.onStop();
+
         Intent intent = new Intent(this, HandActivity.class);
-        intent.putExtra("isServer",isServer);
+        intent.putExtra("isServer", isServer);
         intent.putExtra("isNewGame", false);
 
         startActivity(intent);
@@ -65,24 +84,23 @@ public class TableActivity extends Activity {
     private final class MyTouchListener implements View.OnTouchListener {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            //Log.i("Debug", "<On touch/>");
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                //Log.i("Debug", "<On touch action down/>");
-
                 ClipData data = ClipData.newPlainText("", "");
                 View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
                 view.startDrag(data, shadowBuilder, view.getParent(), 0);
-                view.setVisibility(View.INVISIBLE);
 
-                cardMap.put(view, getPlayingCardFromImageName((String)view.getTag()));
+                if (view.getId() == R.id.deck_card) {
+                    cardMap.put(view, Game.getRandomCard(HelperFunctions.getGame(isServer).getDeck()));
+                } else {
+                    ((LinearLayout) view.getParent()).removeView(view);
+                    cardMap.put(view, HelperFunctions.getPlayingCardFromImageName((String) view.getTag()));
+                }
 
                 viewBeingDragged = view;
 
-                // TODO make clipdata the card information
-
                 return true;
             } else {
-                return true;
+                return false;
             }
         }
     }
@@ -93,9 +111,8 @@ public class TableActivity extends Activity {
             final int action = event.getAction();
 
             if (action == DragEvent.ACTION_DRAG_STARTED) {
-                //Log.i("Debug", "<Action drag started/>");
+                ((TextView) findViewById(R.id.notification_bar)).setText("TO HAND");
             } else if (action == DragEvent.ACTION_DROP) {
-                //Log.i("Debug", "<Action drop/>");
                 Log.i("Debug", "<Card info: " + cardMap.get(viewBeingDragged) + "/>");
 
                 final int containerId = v.getId();
@@ -103,31 +120,60 @@ public class TableActivity extends Activity {
 
                 try {
                     switch (containerId) {
-                        case R.id.table_button:
-                            Log.i("Debug", "<Table button dragged/>");
-                            executeAction(Game.class.getMethod("playerToVisible",
-                                            PlayingCard.class, Entity.class),
-                                    cardMap.get(viewBeingDragged));
+                        case R.id.bottom:
+                            Log.i("Debug", "<Bottom dragged/>");
+                            if (viewBeingDragged.getId() == R.id.deck_card) {
+                                executeAction(
+                                    Game.class.getMethod("deckToPlayer", PlayingCard.class, String.class),
+                                    card, uniqueId);
+                            } else {
+                                executeAction(
+                                    Game.class.getMethod("visibleToPlayer", PlayingCard.class, String.class),
+                                    card, uniqueId);
+                            }
                             break;
-                        case R.id.trash_button:
-                            Log.i("Debug", "<Trash button dragged/>");
+                        case R.id.middle:
+                            Log.i("Debug", "<Middle dragged/>");
+
+                            if (viewBeingDragged.getId() == R.id.deck_card) {
+                                executeAction(Game.class.getMethod("deckToVis", PlayingCard.class),
+                                    card);
+                            }
+
                             break;
-                        case R.id.deck_button:
-                            Log.i("Debug", "<Deck button dragged/>");
+                        case R.id.deck_card:
+                            Log.i("Debug", "<Top dragged/>");
+                            if (viewBeingDragged.getId() != R.id.deck_card) {
+                                executeAction(
+                                    Game.class.getMethod("visibleToDeck", PlayingCard.class),
+                                    card
+                                );
+                            }
+
                             break;
                     }
                 } catch (NoSuchMethodException e) {
                     // THIS SHOULD NEVER HAPPEN
+                    e.printStackTrace();
                 }
 
-                if (containerId != R.id.table_button && containerId != R.id.trash_button
-                        && containerId != R.id.deck_button) {
-                    ((LinearLayout)viewBeingDragged.getParent()).removeView(viewBeingDragged);
-                    ((LinearLayout)findViewById(R.id.middle)).addView(viewBeingDragged);
-                    viewBeingDragged.setVisibility(View.VISIBLE);
+                if (containerId == R.id.bottom) {
+                    cardMap.remove(viewBeingDragged);
+                } else if (containerId == R.id.middle) {
+                    if (viewBeingDragged.getId() == R.id.deck_card)
+                        displayCard(card);
+                    else
+                        ((LinearLayout)findViewById(R.id.middle)).addView(viewBeingDragged);
+                } else if (containerId == R.id.top) {
+                    if (viewBeingDragged.getId() != R.id.deck_card)
+                        ((LinearLayout)findViewById(R.id.middle)).addView(viewBeingDragged);
+                } else if (containerId == R.id.deck_button) {
+                    if (viewBeingDragged.getId() != R.id.deck_card)
+                        cardMap.remove(viewBeingDragged);
                 }
 
                 viewBeingDragged = null;
+                ((TextView) findViewById(R.id.notification_bar)).setText("");
             }
 
             return true;
@@ -135,34 +181,37 @@ public class TableActivity extends Activity {
     }
 
     // HELPER METHODS
-    private void executeAction(Method method, Object...args) {
-        if (!isServer)
-            Client.getInstance().executeAction(method, args);
-        else
-            MultiServer.executeAction(method, args);
-    }
+    private void executeAction(final Method method, final Object...args) {
+        // Wait to execute calls if they occur too quickly
+        if (System.currentTimeMillis() - commandTimeStamp > 0.25 * Math.pow(10, 9)) {
+            if (!isServer)
+                Client.getInstance().executeAction(method, args);
+            else
+                MultiServer.executeAction(method, args);
 
-    private Game getGame() {
-        if (!isServer)
-            return Client.getInstance().getGame();
-        else
-            return MultiServer.getGame();
-    }
+            commandTimeStamp = System.currentTimeMillis();
+        } else {
+            new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-    private String getImageNameFromPlayingCard(PlayingCard card) {
-        return "c_" + (4 * (14 - card.getValue()) + card.getSuit() + 1);
-    }
+                    if (!isServer)
+                        Client.getInstance().executeAction(method, args);
+                    else
+                        MultiServer.executeAction(method, args);
+                }
+            }.start();
 
-    private PlayingCard getPlayingCardFromImageName(String name) {
-        int num = Integer.parseInt(name.substring(2));
-        return new PlayingCard(
-                14 - (num - 1) / 4,
-                (num - 1) % 4,
-                true);
+            commandTimeStamp = System.currentTimeMillis() + 200;
+        }
     }
 
     private void displayCard(PlayingCard card) {
-        String imageName = getImageNameFromPlayingCard(card);
+        String imageName = HelperFunctions.getImageNameFromPlayingCard(card);
 
         Context context = getApplicationContext();
         Resources resources = context.getResources();

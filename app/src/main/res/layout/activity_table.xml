@@ -12,34 +12,64 @@
         android:id="@+id/top"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="25"
+        android:layout_weight="1"
         android:orientation="horizontal"
         android:weightSum="6"
         android:gravity="center|center_horizontal">
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/middle"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="50"
+        android:layout_weight="2"
         android:orientation="horizontal"
-        android:weightSum="7"
-        android:gravity="center">
+        android:gravity="start">
+        <LinearLayout
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_gravity="top"
+                android:text="DECK"
+                android:gravity="center"
+                android:textColor="#faebd7"/>
+            <ImageView
+                android:id="@+id/deck_card"
+                android:layout_gravity="center"
+                android:layout_width="80dp"
+                android:layout_height="115dp"
+                android:background="@drawable/red_back"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/middle"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/bottom"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="25"
+        android:layout_weight="1"
         android:orientation="horizontal"
         android:gravity="end"
         android:weightSum="6" >
-        <View
+        <TextView
+            android:id="@+id/notification_bar"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="4" />
+            android:layout_weight="4"
+            android:textColor="#db162f"
+            android:textSize="50sp"
+            android:textStyle="bold"
+            android:gravity="center"/>
         <Button
             android:layout_width="0dp"
             android:layout_height="match_parent"
