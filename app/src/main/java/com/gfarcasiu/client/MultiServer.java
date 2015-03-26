@@ -8,13 +8,26 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import com.gfarcasiu.game.*;
 import com.gfarcasiu.utilities.*;
 
 public class MultiServer extends Thread {
     private volatile static Game game = new Game(); // Game object to make changes to
+
+    // Static init block
+    static {
+        List<PlayingCard> cards = new ArrayList<>();
+        for (int val = 2; val <= 14; val++)
+            for (int suit = 0; suit <= 4; suit++)
+                cards.add(new PlayingCard(val, suit, true));
+
+        game.initDeck(cards);
+    }
+
     private volatile static int threadCount = 0;
 
     // TODO poor software engineering design
@@ -31,6 +44,7 @@ public class MultiServer extends Thread {
 
     @Override
     public void run() {
+        Log.i("Debug", "<MultiServer thread started/>");
         if (threadCount >= 4)
             return;
 
@@ -43,9 +57,8 @@ public class MultiServer extends Thread {
             outputStreams.add(oos);
             inputStreams.add(ois);
 
-            oos.writeObject("11;lfasdfas blah blah it worked yahoo!");
-            Log.i("Debug", "<Server thread running/>");
             oos.writeObject(game); // Shares current state of game when client connects
+            Log.i("Debug", "<Multiserver game state successfully shared/>");
 
             try {
                 while (!terminated) {
@@ -94,7 +107,8 @@ public class MultiServer extends Thread {
                 default: System.out.println("<Method argument number is incorrect/>");
             }
         } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
-            System.err.println("<Invalid request: " + e.getMessage() + "/>");
+            Log.e("Error", "<Invalid request: " + e.getMessage() + "/>");
+            e.printStackTrace();
             return;
         }
 

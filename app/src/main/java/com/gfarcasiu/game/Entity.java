@@ -29,6 +29,10 @@ public class Entity implements Serializable {
     }
 
     public boolean removeCard(PlayingCard c) {
+        if (c == null)
+            throw new IllegalArgumentException(
+                    "Card to remove is null.");
+
         if (!cards.contains(c))
             throw new IllegalArgumentException(
                     "Entity does not contain card to be removed");

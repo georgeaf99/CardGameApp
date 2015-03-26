@@ -83,8 +83,8 @@ public class ClientActivity extends Activity {
     @Override
     protected void onStop() {
         unregisterReceiver(mReceiver);
-        if (client != null)
-            client.terminate();
+        //if (client != null)
+            //client.terminate();
 
         super.onStop();
     }
@@ -110,20 +110,24 @@ public class ClientActivity extends Activity {
                             UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
                     bluetoothSocket.connect();
 
-                    //ObjectOutputStream oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
+                    ObjectOutputStream oos = new ObjectOutputStream(bluetoothSocket.getOutputStream());
 
-                    //oos.writeObject(serverDevice.getName());
+                    oos.writeObject(serverDevice.getName());
 
                     // Start real client
                     Client.createInstance(bluetoothSocket);
                     client = Client.getInstance();
-                    new Thread(client).start();
+
+                    Thread clientThread = new Thread(client);
+                    clientThread.setPriority(Thread.MAX_PRIORITY);
+                    clientThread.start();
 
                     ClientActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             Intent intent = new Intent(ClientActivity.this, HandActivity.class);
                             intent.putExtra("isServer", false);
+                            intent.putExtra("isNewGame", true);
 
                             startActivity(intent);
                         }

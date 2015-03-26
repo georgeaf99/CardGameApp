@@ -37,6 +37,11 @@ public class Client implements Runnable {
 
     // NOTE : Cannot be called before the thread starts or run is called
     public void executeAction(Method outgoing, Object ... args) {
+        Log.i("Debug", "<Client execute action: " + outgoing.getName() + " " + args.length + "/>");
+
+        //if (oos == null || ois == null)
+            //initialize();
+
         try {
             // Write serialized method
             oos.writeObject(new SerializableMethod(outgoing));
@@ -49,13 +54,14 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
-        initialize();
+        Log.i("Debug", "<Client thread running./>");
+        //if (oos == null || ois == null)
+            initialize();
 
         try {
             try {
-                String test = (String)ois.readObject();
-                Log.i("Debug", "!!!It worked: " + test);
                 game = (Game)ois.readObject();
+                Log.i("Debug", "<Client thread has recieved game/>");
 
                 while (!terminated) {
                     // Read method
@@ -78,14 +84,14 @@ public class Client implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                Log.i("Debug", "<Closing all resources on the client side/>");
-                bluetoothSocket.close();
-                oos.close();
-                ois.close();
-            } catch (IOException e) {
+            //try {
+                //Log.i("Debug", "<Closing all resources on the client side/>");
+                //bluetoothSocket.close();
+                //oos.close();
+                //ois.close();
+            //} catch (IOException e) {
                 // DO NOTHING
-            }
+            //}
         }
     }
 

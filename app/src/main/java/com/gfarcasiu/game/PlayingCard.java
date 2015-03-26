@@ -1,12 +1,20 @@
 package com.gfarcasiu.game;
 
-public class PlayingCard {
+import java.io.Serializable;
+
+public class PlayingCard implements Serializable {
+
     // CONSTANTS
 
-    public static final int DIAMONDS = 0;
-    public static final int CLUBS = 1;
-    public static final int HEARTS = 2;
-    public static final int SPADES = 3;
+    public static final int DIAMONDS = 3;
+    public static final int CLUBS    = 0;
+    public static final int HEARTS   = 2;
+    public static final int SPADES   = 1;
+
+    public static final int JACK  = 11;
+    public static final int QUEEN = 12;
+    public static final int KING  = 13;
+    public static final int ACE   = 14;
 
     // INSTANCE VARS
 
@@ -85,7 +93,7 @@ public class PlayingCard {
 
     // HELPER
     private static void checkValue(int value) {
-        if (value < 2 || value > 13)
+        if (value < 2 || value > 14)
             throw new IllegalArgumentException();
     }
 

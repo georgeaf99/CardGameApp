@@ -1,6 +1,5 @@
 package com.gfarcasiu.cardgameapp;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Context;
@@ -8,14 +7,15 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
+import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.DragEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -23,21 +23,18 @@ import com.gfarcasiu.client.Client;
 import com.gfarcasiu.client.MultiServer;
 import com.gfarcasiu.game.Entity;
 import com.gfarcasiu.game.Game;
-import com.gfarcasiu.game.Player;
 import com.gfarcasiu.game.PlayingCard;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 
 
-public class HandActivity extends Activity {
-    private static String uniqueId;
+public class TableActivity extends Activity {
+    private static Entity currentPlayer;
     private boolean isServer;
 
     private View viewBeingDragged; // TODO think of a better name...
     private HashMap<View, PlayingCard> cardMap = new HashMap<>(); // TODO there must be a better way
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,65 +42,24 @@ public class HandActivity extends Activity {
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
 
-        setContentView(R.layout.activity_hand);
+        setContentView(R.layout.activity_table);
 
-        // Initialize game and player settings
         isServer = getIntent().getExtras().getBoolean("isServer");
 
-        Log.i("Debug", "<Client create is sever: " + isServer + "/>");
+        Log.i("Debug", "<isServer " + isServer + "/>");
 
-        if (getIntent().getExtras().getBoolean("isNewGame")) {
-            uniqueId = Settings.Secure.getString(getApplicationContext().getContentResolver(),
-                    Settings.Secure.ANDROID_ID);
-            Player currentPlayer = new Player(uniqueId, 52);
-
-            try {
-                Log.i("Debug", "<Current player: " + currentPlayer + "/>");
-                executeAction(Game.class.getMethod("addPlayer", Player.class), currentPlayer);
-            } catch (NoSuchMethodException e) {
-                Log.e("Error", "<Player could not be added/>");
-                e.printStackTrace();
-                this.onStop();
-                return;
-            }
-        } else {
-            // Populate cards
-            PlayingCard[] cards = getGame().getPlayer(uniqueId).getCards();
-            for (PlayingCard card : cards)
-                displayCard(card);
-        }
-
-        // Set listeners
-        MyDragEventListener dragEventListener = new MyDragEventListener();
-        findViewById(R.id.bottom).setOnDragListener(dragEventListener);
-        findViewById(R.id.middle).setOnDragListener(dragEventListener);
-        findViewById(R.id.top).setOnDragListener(dragEventListener);
-        findViewById(R.id.deck_button).setOnDragListener(dragEventListener);
-        findViewById(R.id.trash_button).setOnDragListener(dragEventListener);
-        findViewById(R.id.table_button).setOnDragListener(dragEventListener);
+        // Populate cards
+        PlayingCard[] cards = getGame().getVis().getCards();
+        for (PlayingCard card : cards)
+            displayCard(card);
     }
 
-    public void toTable(View view) {
-        Intent intent = new Intent(this, TableActivity.class);
-        intent.putExtra("isServer", isServer);
+    public void toHand(View view) {
+        Intent intent = new Intent(this, HandActivity.class);
+        intent.putExtra("isServer",isServer);
+        intent.putExtra("isNewGame", false);
 
         startActivity(intent);
-    }
-
-    public void drawCard(View view) {
-        Log.i("Debug", "<Game " + getGame() + "/>");
-        PlayingCard playingCard = Game.getRandomCard(getGame().getDeck());
-
-        try {
-            executeAction(Game.class.getMethod("deckToPlayer",
-                PlayingCard.class, String.class), playingCard, uniqueId);
-        } catch (NoSuchMethodException e) {
-            Log.i("Debug", "<Couldn't execute draw card/>");
-        }
-
-        displayCard(playingCard);
-
-        Log.i("Debug", "<Players: " + Arrays.toString(getGame().getPlayers()) + "/>");
     }
 
     private final class MyTouchListener implements View.OnTouchListener {
@@ -150,8 +106,8 @@ public class HandActivity extends Activity {
                         case R.id.table_button:
                             Log.i("Debug", "<Table button dragged/>");
                             executeAction(Game.class.getMethod("playerToVisible",
-                                    PlayingCard.class, String.class),
-                                    card, uniqueId);
+                                            PlayingCard.class, Entity.class),
+                                    cardMap.get(viewBeingDragged));
                             break;
                         case R.id.trash_button:
                             Log.i("Debug", "<Trash button dragged/>");
@@ -178,7 +134,7 @@ public class HandActivity extends Activity {
         }
     }
 
-    // HELPER METHOD
+    // HELPER METHODS
     private void executeAction(Method method, Object...args) {
         if (!isServer)
             Client.getInstance().executeAction(method, args);
@@ -235,5 +191,3 @@ public class HandActivity extends Activity {
         cardMap.put(cardView, card);
     }
 }
-
-

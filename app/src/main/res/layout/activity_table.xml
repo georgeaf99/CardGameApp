@@ -16,28 +16,6 @@
         android:orientation="horizontal"
         android:weightSum="6"
         android:gravity="center|center_horizontal">
-        <Button
-            android:id="@+id/deck_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/GameButton"
-            android:onClick="drawCard"
-            android:text="@string/deck" />
-        <Button
-            android:id="@+id/table_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/GameButton"
-            android:text="@string/table" />
-        <Button
-            android:id="@+id/trash_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/GameButton"
-            android:text="@string/trash" />
     </LinearLayout>
 
     <LinearLayout
@@ -67,7 +45,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             style="@style/GameButton"
-            android:text="@string/to_table"
-            android:onClick="toTable"/>
+            android:text="@string/to_hand"
+            android:onClick="toHand"/>
     </LinearLayout>
 </LinearLayout>

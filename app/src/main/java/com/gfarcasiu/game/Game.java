@@ -2,11 +2,12 @@ package com.gfarcasiu.game;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
 public class Game implements Serializable {
-    private volatile ArrayList<Entity> players = new ArrayList<>();
+    private volatile HashMap<String, Player> players = new HashMap<>();
 
     private Entity deck = new Entity();
     private Entity vis = new Entity();
@@ -16,8 +17,8 @@ public class Game implements Serializable {
 
     // INIT METHODS
 
-    public void addPlayer(Entity p) {
-        players.add(p);
+    public void addPlayer(Player p) {
+        players.put(p.getUnique(), p);
     }
 
     public void removePlayer(Entity p) {
@@ -31,29 +32,29 @@ public class Game implements Serializable {
 
     // CARD MOVEMENT
 
-    public void playerToPlayer(PlayingCard c, Entity p1, Entity p2) {
+    /*public void playerToPlayer(PlayingCard c, Entity p1, Entity p2) {
         p1.removeCard(c);
         p2.addCard(c);
-    }
+    }*/
 
-    public void playerToVisible(PlayingCard c, Entity p) {
-        p.removeCard(c);
+    public void playerToVisible(PlayingCard c, String unique) {
+        players.get(unique).removeCard(c);
         vis.addCard(c);
     }
 
-    public void playerToDeck(PlayingCard c, Entity p) {
-        p.removeCard(c);
+    public void playerToDeck(PlayingCard c, String unique) {
+        players.get(unique).removeCard(c);
         deck.addCard(c);
     }
 
-    public void playerToTrash(PlayingCard c, Entity p) {
-        p.removeCard(c);
+    public void playerToTrash(PlayingCard c, String unique) {
+        players.get(unique).removeCard(c);
         trash.addCard(c);
     }
 
-    public void visibleToPlayer(PlayingCard c, Entity p) {
+    public void visibleToPlayer(PlayingCard c, String unique) {
         vis.removeCard(c);
-        p.addCard(c);
+        players.get(unique).addCard(c);
     }
 
     public void visibleToDeck(PlayingCard c) {
@@ -66,9 +67,9 @@ public class Game implements Serializable {
         trash.addCard(c);
     }
 
-    public void deckToPlayer(PlayingCard c, Entity p) {
+    public void deckToPlayer(PlayingCard c, String unique) {
         deck.removeCard(c);
-        p.addCard(c);
+        players.get(unique).addCard(c);
     }
 
     public void deckToVis(PlayingCard c) {
@@ -102,10 +103,14 @@ public class Game implements Serializable {
         Entity[] toReturn = new Entity[players.size()];
 
         int curLoc = 0;
-        for (Entity e : players)
-            toReturn[curLoc++] = e;
+        for (String unique : players.keySet())
+            toReturn[curLoc++] = players.get(unique);
 
         return toReturn;
+    }
+
+    public Entity getPlayer(String uniqueId) {
+        return players.get(uniqueId);
     }
 
     public Entity getDeck() {
@@ -138,8 +143,8 @@ public class Game implements Serializable {
     public String toString() {
         String toReturn = "Players:\n";
 
-        for (Entity p : players)
-            toReturn += "\t" + p + "\n";
+        for (String unique : players.keySet())
+            toReturn += "\t" + players.get(unique) + "\n";
 
         toReturn += "Deck: " + deck.toString() + "\n";
         toReturn += "Vis: " + vis.toString() + "\n";

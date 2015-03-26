@@ -11,7 +11,6 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-
         <activity
             android:name=".HomeActivity"
             android:label="@string/title_activity_home" >
@@ -32,6 +31,10 @@
         <activity
             android:name=".ClientActivity"
             android:label="@string/title_activity_client" >
+        </activity>
+        <activity
+            android:name=".TableActivity"
+            android:label="@string/title_activity_table" >
         </activity>
     </application>
 

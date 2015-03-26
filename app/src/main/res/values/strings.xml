@@ -18,5 +18,7 @@
     <string name="start_game">Start \nGame</string>
     <string name="title_activity_client">ClientActivity</string>
     <string name="trash">TRASH</string>
+    <string name="title_activity_table">TableActivity</string>
+    <string name="to_hand">TO HAND</string>
 
 </resources>
