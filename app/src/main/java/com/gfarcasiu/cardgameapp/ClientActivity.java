@@ -105,6 +105,7 @@ public class ClientActivity extends Activity {
         new Thread() {
             public void run() {
                 BluetoothDevice serverDevice = discoveredDevices.get(name);
+                bluetoothAdapter.cancelDiscovery(); // stop discovering devices
 
                 try {
                     BluetoothSocket bluetoothSocket = serverDevice.createRfcommSocketToServiceRecord(

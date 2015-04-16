@@ -87,6 +87,8 @@ public class HandActivity extends Activity {
         this.onStop(); // Perhaps not necessary
 
         Intent intent = new Intent(this, TableActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra("isServer", isServer);
         intent.putExtra("uniqueId", uniqueId);
 

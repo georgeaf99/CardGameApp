@@ -26,6 +26,10 @@ public class HostGameActivity extends Activity {
     private static final int ENABLE_BT_REQUEST = 1;
     private static final int DISCOVERABLE_DURATION = 300;
 
+    // Bluetooth Status
+    private boolean bluetoothEnabled = false;
+    private boolean bluetoothInitFailure = false;
+
     private BluetoothAdapter bluetoothAdapter;
 
     private boolean terminate = false;
@@ -40,22 +44,72 @@ public class HostGameActivity extends Activity {
 
         setContentView(R.layout.activity_host_game);
 
+        searchSequence();
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i("Debug", "<Host game onStop/>");
+        terminate = true;
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i("Debug", "<Host game onResume/>");
+
+        // Restart discovery
+        if (terminate) {
+            terminate = false;
+            searchSequence();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.i("Debug", "<onActivityResult callback/>");
+        if (requestCode == ENABLE_BT_REQUEST) {
+            Log.i("Debug", "<Bluetooth enabled callback: " + data + "/>");
+            //bluetoothAdapter.startDiscovery();
+        } else if (requestCode == DISCOVERABLE_DURATION) {
+            // Discoverable accepted
+            Log.i("Debug", "<Discoverable duration callback/>");
+        } else if (requestCode == RESULT_OK) {
+            Log.i("Debug", "<Bluetooth was enabled successfully/>");
+        } else if (requestCode == RESULT_CANCELED) {
+            // Discoverable not accepted
+            Log.i("Debug", "<Bluetooth was NOT enabled successfully or discovery declined/>");
+        }
+    }
+
+    private void searchSequence() {
+        // Reset Multiserver
+        if (MultiServer.isServerStarted()) MultiServer.reset();
+
         // Start Bluetooth Server
         initSequence();
         enableDiscoverablility();
 
         new Thread() {
             public void run() {
+                BluetoothServerSocket bluetoothServerSocket;
+                try {
+                    bluetoothServerSocket =
+                            bluetoothAdapter.listenUsingRfcommWithServiceRecord(
+                                    "CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
+                } catch (IOException e) {
+                    Log.e("Debug", "<Creation of server socket failed./>");
+                    return;
+                }
+
                 // Allow 4 connections
                 for (int i = 0; i < 4; i++) {
                     if (terminate)
-                        return;
+                        break;
 
                     try {
-                        BluetoothServerSocket bluetoothServerSocket =
-                                bluetoothAdapter.listenUsingRfcommWithServiceRecord(
-                                "CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
-
                         BluetoothSocket bluetoothSocket = bluetoothServerSocket.accept();
 
                         // Get name of client
@@ -97,27 +151,6 @@ public class HostGameActivity extends Activity {
         }.start();
     }
 
-    @Override
-    protected void onStop() {
-        terminate = true;
-
-        super.onStop();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == ENABLE_BT_REQUEST) {
-            Log.i("Debug", "<Bluetooth enabled callback/>");
-            bluetoothAdapter.startDiscovery();
-        } else if (requestCode == DISCOVERABLE_DURATION) {
-            // Discoverable accepted
-            Log.i("Debug", "<Discoverable duration callback/>");
-        } else if (requestCode == RESULT_CANCELED) {
-            // Discoverable not accepted
-            Log.i("Debug", "<Discoverable not accepted callback/>");
-        }
-    }
-
     public void startGame(View view) {
         Intent intent = new Intent(this, HandActivity.class);
         intent.putExtra("isServer", true);
@@ -136,22 +169,23 @@ public class HostGameActivity extends Activity {
             return;
         }
 
-        enableBluetooth(); // possibly async call
+        //enableBluetooth(); // possibly async call
     }
 
     private BluetoothAdapter getAdapter() {
         return BluetoothAdapter.getDefaultAdapter();
     }
 
-    private void enableBluetooth() {
-        Log.i("Debug", "<Enabling bluetooth/>");
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enableBtIntent, ENABLE_BT_REQUEST);
-    }
-
     private void enableDiscoverablility() {
         Log.i("Debug", "<Making device discoverable/>");
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCOVERABLE_DURATION);
+        startActivity(discoverableIntent);
+    }
+
+    private void disableDiscoverabilitiy() {
+        Log.i("Debug", "<Making device not discoverable/>");
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, DISCOVERABLE_DURATION);
         startActivity(discoverableIntent);
     }

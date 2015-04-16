@@ -25,6 +25,16 @@ public class Game implements Serializable {
         players.remove(p);
     }
 
+    public static void defaultInitGame(Game game) {
+        List<PlayingCard> cards = new ArrayList<>();
+        for (int val = 2; val <= 14; val++)
+            for (int suit = 0; suit <= 4; suit++)
+                cards.add(new PlayingCard(val, suit, true));
+
+
+        game.initDeck(cards);
+    }
+
     public void initDeck(List<PlayingCard> cards) {
         for (PlayingCard c : cards)
             deck.addCard(c);
