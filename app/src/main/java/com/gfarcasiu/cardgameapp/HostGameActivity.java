@@ -30,7 +30,7 @@ public class HostGameActivity extends Activity {
     private boolean bluetoothEnabled = false;
     private boolean bluetoothInitFailure = false;
 
-    private BluetoothAdapter bluetoothAdapter;
+    private volatile BluetoothAdapter bluetoothAdapter;
 
     private boolean terminate = false;
 
@@ -94,13 +94,22 @@ public class HostGameActivity extends Activity {
 
         new Thread() {
             public void run() {
+                // Wait until bluetooth adapter is initialized
+
                 BluetoothServerSocket bluetoothServerSocket;
                 try {
+                    // Wait until the adapter has been initialized
+                    while (bluetoothAdapter == null) Thread.sleep(50);
+                    while (!bluetoothAdapter.isEnabled()) Thread.sleep(100);
+
                     bluetoothServerSocket =
                             bluetoothAdapter.listenUsingRfcommWithServiceRecord(
-                                    "CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
+                            "CardGameApp", UUID.fromString("d76816b3-e96c-4a23-8c34-34fe39355e10"));
                 } catch (IOException e) {
                     Log.e("Debug", "<Creation of server socket failed./>");
+                    return;
+                } catch (InterruptedException e) {
+                    Log.e("Debug", "<Waiting for adapter to be instantiated failed/>");
                     return;
                 }
 
