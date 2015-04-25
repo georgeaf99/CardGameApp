@@ -57,7 +57,7 @@ public class Client implements Runnable {
         try {
             try {
                 game = (Game)ois.readObject();
-                Log.i("Debug", "<Client thread has recieved game/>");
+                Log.i("Debug", "<Client thread has received game/>");
 
                 while (!terminated) {
                     // Read method

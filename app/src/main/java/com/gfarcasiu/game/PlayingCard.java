@@ -84,6 +84,7 @@ public class PlayingCard implements Serializable {
             case CLUBS : toReturn += "CLUBS"; break;
             case HEARTS : toReturn += "HEARTS"; break;
             case SPADES : toReturn += "SPADES"; break;
+            default : throw new IllegalArgumentException("Invalid card suit");
         }
 
         toReturn += " " + isVisible;
@@ -98,7 +99,7 @@ public class PlayingCard implements Serializable {
     }
 
     private static void checkSuit(int suit) {
-        if (suit < 0 || suit > 4)
+        if (suit < 0 || suit > 3)
             throw new IllegalArgumentException();
     }
 }

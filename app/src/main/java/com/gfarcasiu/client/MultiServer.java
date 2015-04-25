@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import com.gfarcasiu.game.*;
@@ -83,6 +84,9 @@ public class MultiServer extends Thread {
             game = new Game();
             Game.defaultInitGame(game);
         }
+
+        if (game.getPlayers().length > 0)
+            Log.i("Debug", "(Server side) Player Cards: " + Arrays.toString(game.getPlayers()[0].getCards()));
 
         boolean executeWorked = HelperFunctions.executeMethod(game, incoming, inArgs);
 

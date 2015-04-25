@@ -28,7 +28,7 @@ public class Game implements Serializable {
     public static void defaultInitGame(Game game) {
         List<PlayingCard> cards = new ArrayList<>();
         for (int val = 2; val <= 14; val++)
-            for (int suit = 0; suit <= 4; suit++)
+            for (int suit = 0; suit < 4; suit++)
                 cards.add(new PlayingCard(val, suit, true));
 
 
